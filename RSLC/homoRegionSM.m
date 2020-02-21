@@ -1,20 +1,9 @@
-function [Im,sigmaMap] = homoRegionSM(I,NdirMap,medW,difSW,M)  
+function [Im,sigmaMap] = homoRegionSM(I,sigmaMap,medW,difSW,N2)  
 %Gaussian + Median filter
 
-    [row,col,N]=size(NdirMap);
-    sigmaMap=zeros(row,col);
-    for i=1:row
-        for j=1:col
-            for k=1:N-1
-                dif=NdirMap(i,j,k)-NdirMap(i,j,k+1);
-                minV=min(mod(dif,7),mod(-dif,7));
-                sigmaMap(i,j)=sigmaMap(i,j)+minV;
-            end
-        end
-    end
     sigmaMap2=sigmaMap.^2;    
     Im=I;
-    for k=1:M
+    for k=1:N2
         [difSigI]=difSigmaFilter(sigmaMap2,Im,difSW);
         [Im]=medfilt2(difSigI,[medW,medW]);
     end     

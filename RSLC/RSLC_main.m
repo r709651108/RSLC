@@ -13,13 +13,13 @@ I(I==0)=0.01;
 dW=7; %dection template width
 sW=5; %smoothing template width
 N1=4;  % iter
-[dGauMeanI,NdirMap] = edgeRegionSM(I,dW,sW,N1);
+[dGauMeanI,sigmaMap] = edgeRegionSM(I,dW,sW,N1);
 toc
 %% homogeneous regions smoothing
 difSW=5;      %gaussian filter W
 medW=5;       %median filter W
 N2=2;         %iter
-[Im,sigmaMap] = homoRegionSM(I,NdirMap,medW,difSW,N2);
+[Im,sigmaMap] = homoRegionSM(I,sigmaMap,medW,difSW,N2);
 toc
 %% class label correction
 C=5;        %clusters

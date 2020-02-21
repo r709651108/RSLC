@@ -1,15 +1,14 @@
-function [CLabelMap,edgCLabelMap2,finalI] = labelCorrection(dirGauMeanI,medI,sigmaMap,C,W)
+function [finalI] = labelCorrection(dirGauMeanI,medI,sigmaMap,C,W)
      
-    difSigMedI=(medI.*sigmaMap+dirGauMeanI)./(sigmaMap+1); % combine
-    [CLabelMap] = mKMeans(single(difSigMedI),C); 
+    combineI=(medI.*sigmaMap+dirGauMeanI)./(sigmaMap+1); % combine
+    [CLabelMap] = mKMeans(single(combineI),C); 
     
-    edgI=edge(difSigMedI,'canny');
+    edgI=edge(combineI,'canny');
     edgCLabelMap=CLabelMap;
     edgCLabelMap(edgI~=0)=Inf;
     
     fr=(W-1)/2;
     [row,col]=size(medI);
-    edgCLabelMap2=edgCLabelMap;
     [corrMap]= getCorrMap(edgCLabelMap,CLabelMap,W);
 
     for i=1:row
@@ -20,11 +19,11 @@ function [CLabelMap,edgCLabelMap2,finalI] = labelCorrection(dirGauMeanI,medI,sig
                 Y0= max(1,j-fr);
                 Yn= min(col,j+fr);
                 [mostLabel]=findMostSimilarLabel(edgCLabelMap(X0:Xn,Y0:Yn),C,i-X0+1,j-Y0+1);
-                edgCLabelMap2(i,j)=mostLabel;
+                edgCLabelMap(i,j)=mostLabel;
             end
         end
     end
-    [finalI]=transEdgToLabel(edgCLabelMap2,dirGauMeanI);
+    [finalI]=transEdgToLabel(edgCLabelMap,dirGauMeanI);
 
 end
 

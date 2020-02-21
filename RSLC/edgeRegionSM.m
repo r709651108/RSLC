@@ -1,4 +1,4 @@
-function [dGauMeanI,NdirMap] = edgeRegionSM(I,dW,sW,N)
+function [dGauMeanI,sigmaMap] = edgeRegionSM(I,dW,sW,N)
 %edge region smoothing  
 
     dirNum=8; %direction number
@@ -6,13 +6,18 @@ function [dGauMeanI,NdirMap] = edgeRegionSM(I,dW,sW,N)
     [sKerList]=getSmoothTemplate(sW,dirNum);
 
     [row,col]=size(I);
-    NdirMap=zeros(row,col,N);    
-    NimgMap=zeros(row,col,N);
+    firstDirMap=zeros(row,col);
+    sigmaMap=zeros(row,col);
     for m=1:N
         [dirMap]=detecDirection(I,dKerList);
         [I]= edgeSmoothing(I,dirMap,sKerList,sW);
-        NdirMap(:,:,m)=dirMap; 
-        NimgMap(:,:,m)=I;
+        
+        if m>1
+            dif=dirMap-firstDirMap;
+            minMap=min(mod(dif,7),mod(-dif,7));
+            sigmaMap =sigmaMap +minMap;
+        end
+        firstDirMap=dirMap; 
     end
     dGauMeanI=I;
     
@@ -27,18 +32,18 @@ function [DirGauMap]= edgeSmoothing(I,dirMap,sKerList,sW)
     [~,~,len]=size(sKerList);
     
     DirGauMap=zeros(row,col);
-    ConvMap=zeros(row,col,len);
-    gausFilter=fspecial('gaussian',[sW, sW],2);
-    
+    gausFilter=fspecial('gaussian',[sW, sW],2);    
     for n=1:len
         kernel=sKerList(:,:,n).*gausFilter;  
         kernel=kernel/sum(kernel(:));
-        ConvMap(:,:,n)=imfilter(I,kernel, 'replicate'); 
-    end    
-    for i=1:row
-        for j=1:col
-            sel=dirMap(i,j);
-            DirGauMap(i,j)=ConvMap(i,j,sel);
+        ConvMap=imfilter(I,kernel, 'replicate'); 
+        for i=1:row
+            for j=1:col
+                sel=dirMap(i,j);
+                if sel == n
+                    DirGauMap(i,j)=ConvMap(i,j);
+                end
+            end
         end
     end
 
@@ -50,28 +55,22 @@ function [dirMap]=detecDirection(I,decKerList)
     [row,col]=size(I);    
     [~,~,len]=size(decKerList);
     
-    ConvMap=zeros(row,col,len);
+    dirMap =zeros(row,col); 
+    minResMap =zeros(row,col);
     for n=1:len
         kernel=decKerList(:,:,n);
         w=sum(abs(kernel(:)))/2;
         kernel=kernel/w;
-        ConvMap(:,:,n)=imfilter(I,kernel, 'replicate'); 
-    end        
-
-    dirMap =zeros(row,col);   
-    for x=1:row
-        for y=1:col
-            Dir=-1;
-            Val=0;
-            for k=1:len
-                P=abs(ConvMap(x,y,k));
-                if P>=Val
-                   Val=P;
-                   Dir=k;
-                end
-            end
-            dirMap(x,y)=Dir;           
-        end        
+        ConvMap=imfilter(I,kernel, 'replicate'); 
+        for x=1:row
+            for y=1:col
+                P=abs(ConvMap(x,y));
+                if P>=minResMap(x,y)
+                    minResMap(x,y)=P;
+                    dirMap(x,y)=n;
+                end         
+            end        
+        end
     end
     
 end
